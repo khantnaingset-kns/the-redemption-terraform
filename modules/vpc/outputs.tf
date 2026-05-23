@@ -15,3 +15,7 @@ output "isolated_subnet_ids" {
   value       = aws_subnet.isolated_subnet[*].id
   description = "The names of the isolated subnets"
 }
+output "intra_subnet_ids" {
+  value       = aws_subnet.intra_subnet[*].id
+  description = "The names of the intra subnets"
+}

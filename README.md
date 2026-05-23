@@ -15,7 +15,7 @@ redemption-terraform/
 │   ├── database/     # RDS cluster for application database workload.
 │   ├── eks/          # EKS cluster + Karpenter bootstrap (third-party module)
 │   ├── iam/          # IRSA roles, KMS key, node instance policies
-│   ├── vpc/          # VPC, subnets (public / private / isolated), NAT, flow logs
+│   ├── vpc/          # VPC, subnets (public / private / isolated / intra), NAT, flow logs
 │   └── waf/          # WebACL, managed rule groups, rate-limit rules, ALB association
 └── environments/
     ├── prod/
@@ -62,10 +62,11 @@ Provisions the network foundation consumed by all other modules.
 
 Key resources:
 - VPC with `enable_dns_hostnames` and `enable_dns_support` — required for EKS node registration
-- **Three subnet tiers:**
+- **Four subnet tiers:**
   - `public` — ALB, NAT gateway egress
   - `private` — EKS managed node groups, Karpenter-provisioned nodes
   - `isolated` — RDS / ElastiCache; no route to NAT, no IGW
+  - `intra` — internal-only workloads; no route to NAT, no IGW
 - NAT gateway(s) — single or per-AZ depending on environment profile
 - VPC Flow Logs → CloudWatch Log Group (satisfies security requirement C)
 - Explicit `map_public_ip_on_launch = false` on public subnets

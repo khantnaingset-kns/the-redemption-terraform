@@ -10,12 +10,16 @@ resource "aws_vpc" "this" {
   }
 }
 
-resource "aws_vpc_flow_log" "this" {
+resource "aws_flow_log" "this" {
   iam_role_arn         = var.vpc_flow_log_iam_role_arn
   vpc_id               = aws_vpc.this.id
   traffic_type         = "ALL"
-  log_destination_type = "cloud-watch-logs"
-  log_destination      = var.aws_cloudwatch_vpc_flow_log_group_arn
+  log_destination_type = "s3"
+  log_destination      = var.vpc_flow_logs_bucket_arn
+  destination_options {
+    file_format        = "parquet"
+    per_hour_partition = true
+  }
   tags = {
     Name = "${var.vpc_name}-flow-logs"
   }
@@ -59,6 +63,16 @@ resource "aws_subnet" "isolated_subnet" {
   availability_zone = element(coalesce(var.azs, data.aws_availability_zones.available.names), count.index)
   tags = {
     Name = "${var.vpc_name}-isolated-subnet-${count.index + 1}"
+  }
+}
+
+resource "aws_subnet" "intra_subnet" {
+  count             = length(var.intra_subnet_cidr)
+  cidr_block        = var.intra_subnet_cidr[count.index]
+  vpc_id            = aws_vpc.this.id
+  availability_zone = element(coalesce(var.azs, data.aws_availability_zones.available.names), count.index)
+  tags = {
+    Name = "${var.vpc_name}-intra-subnet-${count.index + 1}"
   }
 }
 
@@ -131,4 +145,3 @@ resource "aws_route_table_association" "private_rt_association" {
   subnet_id      = aws_subnet.private_subnet[count.index].id            # Associate the route table with each private subnet
   route_table_id = aws_route_table.private_rt[0].id                     # Use the shared private route table
 }
-
