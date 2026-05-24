@@ -36,7 +36,7 @@ data "aws_iam_policy_document" "vpc_flow_logs_bucket_policy" {
       test     = "ArnLike"
       variable = "aws:SourceArn"
       values = [
-        "arn:aws:logs:${data.aws_region.this.name}:${data.aws_caller_identity.this.account_id}:*"
+        "arn:aws:logs:${data.aws_region.this.region}:${data.aws_caller_identity.this.account_id}:*"
       ]
     }
   }
@@ -68,7 +68,7 @@ data "aws_iam_policy_document" "vpc_flow_logs_bucket_policy" {
       test     = "ArnLike"
       variable = "aws:SourceArn"
       values = [
-        "arn:aws:logs:${data.aws_region.this.name}:${data.aws_caller_identity.this.account_id}:*"
+        "arn:aws:logs:${data.aws_region.this.region}:${data.aws_caller_identity.this.account_id}:*"
       ]
     }
   }
@@ -87,6 +87,67 @@ data "aws_iam_policy_document" "vpc_flow_logs_bucket_policy" {
     resources = [
       aws_s3_bucket.vpc_flow_logs.arn,
       "${aws_s3_bucket.vpc_flow_logs.arn}/*"
+    ]
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "alb_logs_bucket_policy" {
+  statement {
+    sid    = "AWSLoadBalancerAclCheck"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logdelivery.elasticloadbalancing.amazonaws.com"]
+    }
+
+    actions = ["s3:GetBucketAcl"]
+
+    resources = [aws_s3_bucket.alb_logs.arn]
+  }
+
+  statement {
+    sid    = "AWSLoadBalancerLogsWrite"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["logdelivery.elasticloadbalancing.amazonaws.com"]
+    }
+
+    actions = ["s3:PutObject"]
+
+    resources = [
+      "${aws_s3_bucket.alb_logs.arn}/${local.alb_logs_path_prefix}/${data.aws_caller_identity.this.account_id}/*"
+    ]
+
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:elasticloadbalancing:${data.aws_region.this.region}:${data.aws_caller_identity.this.account_id}:loadbalancer/*"]
+    }
+  }
+
+  statement {
+    sid    = "DenyInsecureTransport"
+    effect = "Deny"
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    actions = ["s3:*"]
+
+    resources = [
+      aws_s3_bucket.alb_logs.arn,
+      "${aws_s3_bucket.alb_logs.arn}/*"
     ]
 
     condition {

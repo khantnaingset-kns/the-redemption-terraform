@@ -52,7 +52,7 @@ resource "aws_kms_key_policy" "logs_bucket_kms_key" {
             }
 
             ArnLike = {
-              "aws:SourceArn" = "arn:aws:logs:${data.aws_region.this.name}:${data.aws_caller_identity.this.account_id}:*"
+              "aws:SourceArn" = "arn:aws:logs:${data.aws_region.this.region}:${data.aws_caller_identity.this.account_id}:*"
             }
           }
         }

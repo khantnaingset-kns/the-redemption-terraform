@@ -1,9 +1,5 @@
 locals {
   cluster_name = "${var.environment}-${var.cluster_name}"
-  tags = {
-    Environment = var.environment
-    Cluster     = local.cluster_name
-  }
 }
 
 module "eks" {
@@ -120,6 +116,28 @@ module "eks" {
         {
           namespace = "kube-system"
           labels    = { "app.kubernetes.io/name" = "karpenter" }
+        }
+      ]
+      iam_role_additional_policies = {
+        cloudwatch_logs = var.fargate_cloudwatch_logs_policy_arn
+      }
+    }
+    argocd = {
+      labels = {
+        # Used to ensure Karpenter runs on nodes that it does not manage
+        "eks.amazonaws.com/compute-type" = "fargate"
+      }
+      taints = [
+        {
+          key    = "eks.amazonaws.com/compute-type"
+          value  = "fargate"
+          effect = "NO_SCHEDULE"
+        }
+      ]
+      name = "argocd"
+      selectors = [
+        {
+          namespace = "argocd"
         }
       ]
       iam_role_additional_policies = {
@@ -257,40 +275,73 @@ resource "aws_eks_addon" "ebs_csi" {
   ]
 }
 
-module "argocd_eks_capability" {
-  source       = "terraform-aws-modules/eks/aws//modules/capability"
-  version      = "21.20.0"
-  type         = "ARGOCD"
-  cluster_name = module.eks.cluster_name
+module "loki_s3_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = "6.4.0"
 
-  configuration = {
-    argo_cd = {
-      aws_idc = {
-        idc_instance_arn = one(data.aws_ssoadmin_instances.this.arns)
+  name        = "loki-s3-irsa"
+  description = "IAM Role for Loki to access S3 bucket and invoke Lambda via Function URL"
+  policies = {
+    LokiS3Access = var.logging_s3_access_policy_arn
+    # LambdaInvoke = var.lambda_invoke_arn
+  }
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["o11y:loki-sa"]
+    }
+  }
+
+
+  depends_on = [module.eks]
+}
+
+resource "helm_release" "argocd" {
+  name             = "argocd"
+  namespace        = "argocd"
+  create_namespace = true
+
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  version    = var.argocd_chart_version
+
+  values = [
+    yamlencode({
+      configs = {
+        params = {
+          "server.insecure" = true
+        }
+        cm = {
+          "admin.enabled" = "false"
+        }
       }
-      namespace = "argocd"
-      rbac_role_mapping = [{
-        role = "ADMIN"
-        identity = [{
-          id   = data.aws_identitystore_group.aws_administrator.group_id
-          type = "SSO_GROUP"
-        }]
-      }]
-    }
-  }
+      server = {
+        ingress = {
+          enabled = false # Day 2 — pending domain and SSO provisioning
+        }
+        service = {
+          type = "ClusterIP"
+        }
+      }
+      repoServer = {
+        resources = {
+          requests = {
+            cpu    = "100m"
+            memory = "256Mi"
+          }
+        }
+      }
+      redis = {
+        resources = {
+          requests = {
+            cpu    = "100m"
+            memory = "128Mi"
+          }
+        }
+      }
+    })
+  ]
 
-  # IAM Role/Policy
-  iam_policy_statements = {
-    ECRRead = {
-      actions = [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-      ]
-      resources = ["*"]
-    }
-  }
-
-  tags = local.tags
+  depends_on = [module.eks]
 }

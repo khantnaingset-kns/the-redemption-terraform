@@ -82,16 +82,16 @@ variable "karpenter_chart_version" {
 
 }
 
-variable "argocd_admin_group_display_name" {
-  description = "Identity Center group display name to map as ArgoCD administrator"
+variable "argocd_chart_version" {
+  description = "The version of the ArgoCD Helm chart to deploy"
   type        = string
-  default     = "AWSAdministratorAccess"
 
   validation {
-    condition     = length(var.argocd_admin_group_display_name) > 0
-    error_message = "ArgoCD admin group display name cannot be empty."
+    condition     = length(var.argocd_chart_version) > 0
+    error_message = "ArgoCD chart version cannot be an empty string."
   }
 }
+
 variable "alb_sg_id" {
   description = "The ID of the security group to allow inbound access from ALB"
   type        = string
@@ -99,5 +99,15 @@ variable "alb_sg_id" {
   validation {
     condition     = can(regex("^sg-[0-9a-f]+$", var.alb_sg_id))
     error_message = "alb_sg_id must be a valid security group ID (e.g., sg-123abc)."
+  }
+}
+
+variable "logging_s3_access_policy_arn" {
+  description = "The ARN of the IAM policy for S3 access for logging"
+  type        = string
+
+  validation {
+    condition     = can(regex("^arn:aws:iam::[0-9]+:policy/.+$", var.logging_s3_access_policy_arn))
+    error_message = "Logging S3 access policy ARN cannot be an empty string."
   }
 }

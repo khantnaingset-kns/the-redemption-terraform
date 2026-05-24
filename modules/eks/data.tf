@@ -11,18 +11,7 @@ data "aws_ecrpublic_authorization_token" "token" {
   region = data.aws_region.this.region
 }
 
-data "aws_ssoadmin_instances" "this" {}
 
-data "aws_identitystore_group" "aws_administrator" {
-  identity_store_id = one(data.aws_ssoadmin_instances.this.identity_store_ids)
-
-  alternate_identifier {
-    unique_attribute {
-      attribute_path  = "DisplayName"
-      attribute_value = var.argocd_admin_group_display_name
-    }
-  }
-}
 
 data "aws_iam_policy_document" "karpenter_controller_assume_role_policy" {
   statement {

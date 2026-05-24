@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "vpc_flow_logs" {
   bucket_namespace = "account-regional"
-  bucket           = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.name, var.vpc_flow_logs_bucket_prefix)
+  bucket           = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.region, var.vpc_flow_logs_bucket_prefix)
 }
 
 resource "aws_s3_bucket_ownership_controls" "vpc_flow_logs" {
@@ -75,7 +75,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "vpc_flow_logs" {
 
 resource "aws_s3_bucket" "eks_logs" {
   bucket_namespace = "account-regional"
-  bucket           = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.name, var.eks_logs_bucket_prefix)
+  bucket           = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.region, var.eks_logs_bucket_prefix)
 }
 
 resource "aws_s3_bucket_ownership_controls" "eks_logs" {
@@ -145,4 +145,80 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "eks_logs" {
 
     bucket_key_enabled = true
   }
+}
+
+resource "aws_s3_bucket" "alb_logs" {
+  bucket_namespace = "account-regional"
+  bucket           = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.region, var.alb_logs_bucket_prefix)
+}
+
+resource "aws_s3_bucket_ownership_controls" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_versioning" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  versioning_configuration {
+    status = "Disabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    id     = "alb-logs-retention"
+    status = "Enabled"
+
+    filter {
+      prefix = "${local.alb_logs_path_prefix}/"
+    }
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    transition {
+      days          = 90
+      storage_class = "GLACIER_IR"
+    }
+
+    expiration {
+      days = var.alb_logs_retention_days
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+  policy = data.aws_iam_policy_document.alb_logs_bucket_policy.json
 }

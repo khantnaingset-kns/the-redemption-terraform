@@ -18,3 +18,24 @@ resource "aws_iam_policy" "fargate_cloudwatch_logs_policy" {
     ]
   })
 }
+
+resource "aws_iam_policy" "logging_s3_access" {
+  name        = "LoggingS3AccessPolicy"
+  description = "Policy for granting access to S3 bucket for logging."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:*",
+        ]
+        Resource = [
+          "${var.eks_logs_bucket_arn}",
+          "${var.eks_logs_bucket_arn}/*"
+        ]
+      }
+    ]
+  })
+}
