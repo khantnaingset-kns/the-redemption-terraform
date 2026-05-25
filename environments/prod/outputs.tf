@@ -72,3 +72,38 @@ output "alb_target_group_arn" {
   value       = module.alb.target_group_arn
   description = "Prod ALB target group ARN"
 }
+
+output "db_secrets_manager_secret_arn" {
+  value       = module.database.secrets_manager_secret_arn
+  description = "Prod RDS Secrets Manager secret ARN"
+}
+
+output "db_endpoint" {
+  value       = module.database.db_endpoint
+  description = "Prod RDS endpoint"
+}
+
+output "db_port" {
+  value       = module.database.db_port
+  description = "Prod RDS port"
+}
+
+output "db_instance_arn" {
+  value       = module.database.db_instance_arn
+  description = "Prod RDS instance ARN"
+}
+
+output "db_security_group_id" {
+  value       = module.database.security_group_id
+  description = "Prod RDS security group ID"
+}
+
+output "waf_web_acl_arn" {
+  value       = module.waf.web_acl_arn
+  description = "Prod WAF Web ACL ARN"
+}
+
+output "waf_web_acl_name" {
+  value       = module.waf.web_acl_name
+  description = "Prod WAF Web ACL name"
+}

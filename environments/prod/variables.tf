@@ -111,3 +111,63 @@ variable "argocd_chart_version" {
   description = "ArgoCD Helm chart version"
   type        = string
 }
+
+variable "db_instance_name" {
+  description = "Optional explicit RDS instance identifier. Defaults to environment-cluster_name-db."
+  type        = string
+  default     = ""
+}
+
+variable "db_engine" {
+  description = "RDS database engine"
+  type        = string
+  default     = "postgres"
+}
+
+variable "db_engine_version" {
+  description = "RDS database engine version"
+  type        = string
+  default     = "17"
+}
+
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t4g.medium"
+}
+
+variable "db_name" {
+  description = "Name of the database to create"
+  type        = string
+  default     = "theredemption"
+}
+
+variable "db_username" {
+  description = "Master username for the database"
+  type        = string
+  default     = "dbadmin"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage in GB for RDS"
+  type        = number
+  default     = 20
+}
+
+variable "db_max_allocated_storage" {
+  description = "Maximum allocated storage in GB for RDS autoscaling"
+  type        = number
+  default     = 100
+}
+
+variable "db_performance_insights_retention_period" {
+  description = "Performance Insights retention period in days"
+  type        = number
+  default     = 7
+}
+
+variable "waf_trusted_ips" {
+  description = "List of IP addresses to add to the WAF trusted IP set (prod only)"
+  type        = list(string)
+  default     = []
+}

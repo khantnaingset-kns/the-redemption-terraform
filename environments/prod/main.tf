@@ -93,10 +93,40 @@ module "eks" {
   }
 }
 
-# module "database" {
-#   source = "../../modules/database"
-# }
+module "database" {
+  source = "../../modules/database"
 
-# module "waf" {
-#   source = "../../modules/waf"
-# }
+  vpc_id           = module.vpc.vpc
+  sg_name          = "${var.environment}-${var.cluster_name}-db-sg"
+  db_subnet_ids    = module.vpc.isolated_subnet_ids
+  db_instance_name = var.db_instance_name != "" ? var.db_instance_name : "${var.environment}-${var.cluster_name}-db"
+
+  engine         = var.db_engine
+  engine_version = var.db_engine_version
+  instance_class = var.db_instance_class
+  db_name        = var.db_name
+  db_username    = var.db_username
+
+  allocated_storage                     = var.db_allocated_storage
+  max_allocated_storage                 = var.db_max_allocated_storage
+  performance_insights_retention_period = var.db_performance_insights_retention_period
+
+  ingress_rules = [
+    {
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      cidr_blocks = var.vpc_cidr
+      description = "PostgreSQL from VPC"
+    }
+  ]
+
+}
+
+module "waf" {
+  source = "../../modules/waf"
+
+  environment = var.environment
+  alb_arn     = module.alb.arn
+  trusted_ips = var.waf_trusted_ips
+}
