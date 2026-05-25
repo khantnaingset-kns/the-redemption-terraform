@@ -59,7 +59,7 @@ module "eks" {
       })
       preserve      = true
       most_recent   = false
-      addon_version = "v1.12.4-eksbuild.1"
+      addon_version = "v1.14.2-eksbuild.4"
 
       timeouts = {
         create = "25m"
@@ -71,20 +71,13 @@ module "eks" {
     vpc-cni = {
       preserve      = true
       most_recent   = false
-      addon_version = "v1.20.4-eksbuild.1"
+      addon_version = "v1.21.2-eksbuild.2"
     }
 
     kube-proxy = {
       preserve      = true
       most_recent   = false
-      addon_version = "v1.33.5-eksbuild.2"
-    }
-
-    metrics-server = {
-      preserve         = true
-      most_recent      = false
-      addon_version    = "v0.7.2-eksbuild.3"
-      wait_for_rollout = false
+      addon_version = "v1.32.13-eksbuild.11"
     }
   }
 
@@ -100,22 +93,12 @@ module "eks" {
 
   fargate_profiles = {
     kube_system = {
-      labels = {
-        # Used to ensure Karpenter runs on nodes that it does not manage
-        "eks.amazonaws.com/compute-type" = "fargate"
-      }
-      taints = [
-        {
-          key    = "eks.amazonaws.com/compute-type"
-          value  = "fargate"
-          effect = "NO_SCHEDULE"
-        }
-      ]
       name = "kube_system"
+      # CoreDNS and metrics-server EKS add-ons run in kube-system. This selector
+      # gives those pods Fargate capacity before the add-ons are created.
       selectors = [
         {
           namespace = "kube-system"
-          labels    = { "app.kubernetes.io/name" = "karpenter" }
         }
       ]
       iam_role_additional_policies = {
@@ -123,17 +106,6 @@ module "eks" {
       }
     }
     argocd = {
-      labels = {
-        # Used to ensure Karpenter runs on nodes that it does not manage
-        "eks.amazonaws.com/compute-type" = "fargate"
-      }
-      taints = [
-        {
-          key    = "eks.amazonaws.com/compute-type"
-          value  = "fargate"
-          effect = "NO_SCHEDULE"
-        }
-      ]
       name = "argocd"
       selectors = [
         {
@@ -153,7 +125,8 @@ module "karpenter" {
   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
   version = "21.20.0"
 
-  cluster_name = module.eks.cluster_name
+  cluster_name         = module.eks.cluster_name
+  enable_inline_policy = true
 
   // Pod Identity
   create_pod_identity_association = false
@@ -176,12 +149,15 @@ module "karpenter" {
 }
 
 resource "helm_release" "karpenter" {
-  namespace           = "kube-system"
-  name                = "karpenter"
+
+  namespace = "kube-system"
+  name      = "karpenter"
+
   repository          = "oci://public.ecr.aws/karpenter"
   chart               = "karpenter"
   version             = var.karpenter_chart_version
   wait                = true
+  timeout             = 900
   repository_username = data.aws_ecrpublic_authorization_token.token.user_name
   repository_password = data.aws_ecrpublic_authorization_token.token.password
 
@@ -237,7 +213,10 @@ module "ebs_csi_driver_irsa" {
 
   name = "ebs-csi"
 
-  attach_ebs_csi_policy = true
+  create_policy = false
+  policies = {
+    AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  }
 
   oidc_providers = {
     this = {
@@ -279,8 +258,9 @@ module "loki_s3_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
   version = "6.4.0"
 
-  name        = "loki-s3-irsa"
-  description = "IAM Role for Loki to access S3 bucket and invoke Lambda via Function URL"
+  name          = "loki-s3-irsa"
+  description   = "IAM Role for Loki to access S3 bucket and invoke Lambda via Function URL"
+  create_policy = false
   policies = {
     LokiS3Access = var.logging_s3_access_policy_arn
     # LambdaInvoke = var.lambda_invoke_arn
@@ -305,6 +285,7 @@ resource "helm_release" "argocd" {
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
   version    = var.argocd_chart_version
+  timeout    = 900
 
   values = [
     yamlencode({
@@ -313,7 +294,8 @@ resource "helm_release" "argocd" {
           "server.insecure" = true
         }
         cm = {
-          "admin.enabled" = "false"
+          "admin.enabled" = "true"
+          url             = "http://localhost:8080"
         }
       }
       server = {

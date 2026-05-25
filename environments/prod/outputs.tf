@@ -48,6 +48,16 @@ output "fargate_cloudwatch_logs_policy_arn" {
   description = "Prod Fargate CloudWatch Logs policy ARN"
 }
 
+output "logging_s3_access_policy_arn" {
+  value       = module.iam.logging_s3_access_policy_arn
+  description = "Prod logging S3 access policy ARN"
+}
+
+output "alb_controller_policy_arn" {
+  value       = module.iam.alb_controller_policy_arn
+  description = "Prod ALB Controller IAM policy ARN"
+}
+
 output "cluster_name" {
   value       = module.eks.cluster_name
   description = "Prod EKS cluster name"

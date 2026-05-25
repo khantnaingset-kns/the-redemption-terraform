@@ -25,7 +25,7 @@ data "aws_iam_policy_document" "karpenter_controller_assume_role_policy" {
     condition {
       test     = "StringEquals"
       variable = "${module.eks.oidc_provider}:sub"
-      values   = ["system:serviceaccount:karpenter:karpenter"]
+      values   = ["system:serviceaccount:kube-system:karpenter"]
     }
 
     # https://aws.amazon.com/premiumsupport/knowledge-center/eks-troubleshoot-oidc-and-irsa/?nc1=h_ls
@@ -38,5 +38,4 @@ data "aws_iam_policy_document" "karpenter_controller_assume_role_policy" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
   }
 }
-
 
