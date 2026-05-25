@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+      - id: terraform-fmt
+        name: terraform fmt
+        entry: terraform fmt -recursive
+        language: system
+        pass_filenames: false
+        files: \.(tf|tfvars)$
+      - id: terraform-docs-components
+        name: terraform-docs components
+        entry: bash scripts/terraform-docs-components.sh
+        language: system
+        pass_filenames: false
+        files: ^components/terraform/.*\.tf$
+      - id: terraform-docs-modules
+        name: terraform-docs modules
+        entry: bash scripts/terraform-docs-modules.sh
+        language: system
+        pass_filenames: false
+        files: ^modules/.*\.tf$
