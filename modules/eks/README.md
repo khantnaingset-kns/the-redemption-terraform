@@ -82,6 +82,7 @@ No requirements.
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_alb_controller_irsa"></a> [alb\_controller\_irsa](#module\_alb\_controller\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts | 6.4.0 |
 | <a name="module_ebs_csi_driver_irsa"></a> [ebs\_csi\_driver\_irsa](#module\_ebs\_csi\_driver\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts | n/a |
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 21.20.0 |
 | <a name="module_karpenter"></a> [karpenter](#module\_karpenter) | terraform-aws-modules/eks/aws//modules/karpenter | 21.20.0 |
@@ -103,6 +104,7 @@ No requirements.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_alb_controller_policy_arn"></a> [alb\_controller\_policy\_arn](#input\_alb\_controller\_policy\_arn) | The ARN of the IAM policy for the AWS Load Balancer Controller | `string` | n/a | yes |
 | <a name="input_alb_sg_id"></a> [alb\_sg\_id](#input\_alb\_sg\_id) | The ID of the security group to allow inbound access from ALB | `string` | n/a | yes |
 | <a name="input_argocd_chart_version"></a> [argocd\_chart\_version](#input\_argocd\_chart\_version) | The version of the ArgoCD Helm chart to deploy | `string` | n/a | yes |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the EKS cluster | `string` | n/a | yes |
@@ -119,6 +121,7 @@ No requirements.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_alb_controller_irsa_role_arn"></a> [alb\_controller\_irsa\_role\_arn](#output\_alb\_controller\_irsa\_role\_arn) | ARN of the IAM role for the AWS Load Balancer Controller (IRSA) |
 | <a name="output_cluster_certificate_authority_data"></a> [cluster\_certificate\_authority\_data](#output\_cluster\_certificate\_authority\_data) | Base64 encoded EKS cluster certificate authority data |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | EKS cluster API endpoint |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | EKS cluster name |

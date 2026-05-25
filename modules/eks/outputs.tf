@@ -17,3 +17,8 @@ output "oidc_provider_arn" {
   value       = module.eks.oidc_provider_arn
   description = "EKS OIDC provider ARN"
 }
+
+output "alb_controller_irsa_role_arn" {
+  value       = module.alb_controller_irsa.arn
+  description = "ARN of the IAM role for the AWS Load Balancer Controller (IRSA)"
+}

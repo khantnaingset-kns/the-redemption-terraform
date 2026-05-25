@@ -111,3 +111,13 @@ variable "logging_s3_access_policy_arn" {
     error_message = "Logging S3 access policy ARN cannot be an empty string."
   }
 }
+
+variable "alb_controller_policy_arn" {
+  description = "The ARN of the IAM policy for the AWS Load Balancer Controller"
+  type        = string
+
+  validation {
+    condition     = can(regex("^arn:aws:iam::[0-9]+:policy/.+$", var.alb_controller_policy_arn))
+    error_message = "ALB Controller policy ARN must be a valid IAM policy ARN."
+  }
+}

@@ -277,6 +277,27 @@ module "loki_s3_irsa" {
   depends_on = [module.eks]
 }
 
+module "alb_controller_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = "6.4.0"
+
+  name          = "alb-controller-irsa"
+  description   = "IAM Role for AWS Load Balancer Controller"
+  create_policy = false
+  policies = {
+    ALBControllerPolicy = var.alb_controller_policy_arn
+  }
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:aws-load-balancer-controller-sa"]
+    }
+  }
+
+  depends_on = [module.eks]
+}
+
 resource "helm_release" "argocd" {
   name             = "argocd"
   namespace        = "argocd"

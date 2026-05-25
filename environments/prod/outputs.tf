@@ -117,3 +117,8 @@ output "waf_web_acl_name" {
   value       = module.waf.web_acl_name
   description = "Prod WAF Web ACL name"
 }
+
+output "alb_controller_irsa_role_arn" {
+  value       = module.eks.alb_controller_irsa_role_arn
+  description = "Prod ALB Controller IRSA IAM role ARN"
+}

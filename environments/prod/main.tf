@@ -85,6 +85,7 @@ module "eks" {
   alb_sg_id                          = module.alb.security_group_id
   fargate_cloudwatch_logs_policy_arn = module.iam.fargate_cloudwatch_logs_policy_arn
   logging_s3_access_policy_arn       = module.iam.logging_s3_access_policy_arn
+  alb_controller_policy_arn          = module.iam.alb_controller_policy_arn
   karpenter_chart_version            = var.karpenter_chart_version
   argocd_chart_version               = var.argocd_chart_version
 
