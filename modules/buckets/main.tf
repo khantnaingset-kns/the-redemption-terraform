@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "vpc_flow_logs" {
-  bucket = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.region, var.vpc_flow_logs_bucket_prefix)
+  bucket        = local.vpc_flow_logs_bucket_name
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "vpc_flow_logs" {
@@ -73,7 +74,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "vpc_flow_logs" {
 
 
 resource "aws_s3_bucket" "eks_logs" {
-  bucket = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.region, var.eks_logs_bucket_prefix)
+  bucket        = local.eks_logs_bucket_name
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "eks_logs" {
@@ -146,7 +148,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "eks_logs" {
 }
 
 resource "aws_s3_bucket" "alb_logs" {
-  bucket = format("%s-%s-%s-bucket", data.aws_caller_identity.this.account_id, data.aws_region.this.region, var.alb_logs_bucket_prefix)
+  bucket        = local.alb_logs_bucket_name
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "alb_logs" {

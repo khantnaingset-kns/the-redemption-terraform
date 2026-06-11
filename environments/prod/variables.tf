@@ -112,6 +112,12 @@ variable "argocd_chart_version" {
   type        = string
 }
 
+variable "create_node_dependent_addons" {
+  description = "Whether to create EKS add-ons that need schedulable EC2 nodes. Keep false for bootstrap, then enable after Karpenter has EC2 capacity."
+  type        = bool
+  default     = true
+}
+
 variable "db_instance_name" {
   description = "Optional explicit RDS instance identifier. Defaults to environment-cluster_name-db."
   type        = string

@@ -1,5 +1,6 @@
 locals {
-  cluster_name = "${var.environment}-${var.cluster_name}"
+  cluster_name                     = "${var.environment}-${var.cluster_name}"
+  karpenter_default_node_pool_name = "general-purpose"
 }
 
 module "eks" {
@@ -22,6 +23,25 @@ module "eks" {
   control_plane_subnet_ids = var.intra_subnets
   enable_irsa              = true
 
+  security_group_additional_rules = {
+    ingress_coredns_udp = {
+      description                = "Allow CoreDNS UDP from nodes to Fargate"
+      protocol                   = "udp"
+      from_port                  = 53
+      to_port                    = 53
+      type                       = "ingress"
+      source_node_security_group = true
+    }
+    ingress_coredns_tcp = {
+      description                = "Allow CoreDNS TCP from nodes to Fargate"
+      protocol                   = "tcp"
+      from_port                  = 53
+      to_port                    = 53
+      type                       = "ingress"
+      source_node_security_group = true
+    }
+  }
+
   node_security_group_additional_rules = {
     ingress_alb_controller_https = {
       description              = "Allow ALB Controller to communicate with nodes over HTTP"
@@ -43,35 +63,11 @@ module "eks" {
 
 
   addons = {
-    coredns = {
-      configuration_values = jsonencode({
-        computeType = "fargate"
-        resources = {
-          limits = {
-            cpu    = "0.25"
-            memory = "256M"
-          }
-          requests = {
-            cpu    = "0.25"
-            memory = "256M"
-          }
-        }
-      })
-      preserve      = true
-      most_recent   = false
-      addon_version = "v1.14.2-eksbuild.4"
-
-      timeouts = {
-        create = "25m"
-        delete = "10m"
-      }
-      wait_for_rollout = false
-    }
-
     vpc-cni = {
-      preserve      = true
-      most_recent   = false
-      addon_version = "v1.21.2-eksbuild.2"
+      before_compute = true
+      preserve       = true
+      most_recent    = false
+      addon_version  = "v1.21.2-eksbuild.2"
     }
 
     kube-proxy = {
@@ -93,12 +89,35 @@ module "eks" {
 
   fargate_profiles = {
     kube_system = {
+      labels = {
+        "eks.amazonaws.com/compute-type" = "fargate"
+      }
+      taints = [
+        {
+          key    = "eks.amazonaws.com/compute-type"
+          value  = "fargate"
+          effect = "NO_SCHEDULE"
+        }
+      ]
       name = "kube_system"
-      # CoreDNS and metrics-server EKS add-ons run in kube-system. This selector
-      # gives those pods Fargate capacity before the add-ons are created.
       selectors = [
         {
           namespace = "kube-system"
+          labels    = { "app.kubernetes.io/name" = "karpenter" }
+        }
+      ]
+      iam_role_additional_policies = {
+        cloudwatch_logs = var.fargate_cloudwatch_logs_policy_arn
+      }
+    }
+    coredns = {
+      name = "coredns"
+      selectors = [
+        {
+          namespace = "kube-system"
+          labels = {
+            "k8s-app" = "kube-dns"
+          }
         }
       ]
       iam_role_additional_policies = {
@@ -208,6 +227,38 @@ resource "helm_release" "karpenter" {
   ]
 }
 
+resource "aws_eks_addon" "coredns" {
+  cluster_name  = module.eks.cluster_name
+  addon_name    = "coredns"
+  addon_version = "v1.14.2-eksbuild.4"
+  preserve      = true
+
+  configuration_values = jsonencode({
+    computeType = "Fargate"
+    resources = {
+      limits = {
+        cpu    = "0.25"
+        memory = "256M"
+      }
+      requests = {
+        cpu    = "0.25"
+        memory = "256M"
+      }
+    }
+  })
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  timeouts {
+    create = "25m"
+    update = "25m"
+    delete = "10m"
+  }
+
+  depends_on = [module.eks]
+}
+
 module "ebs_csi_driver_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
 
@@ -229,11 +280,26 @@ module "ebs_csi_driver_irsa" {
 }
 
 resource "aws_eks_addon" "ebs_csi" {
+  count = var.create_node_dependent_addons ? 1 : 0
+
   cluster_name             = module.eks.cluster_name
   addon_name               = "aws-ebs-csi-driver"
   addon_version            = "v1.42.0-eksbuild.1"
   service_account_role_arn = module.ebs_csi_driver_irsa.arn
   configuration_values = jsonencode({
+    controller = {
+      nodeSelector = {
+        "karpenter.sh/nodepool" = local.karpenter_default_node_pool_name
+      }
+      tolerations = [
+        {
+          key      = "workload-tier"
+          operator = "Equal"
+          value    = local.karpenter_default_node_pool_name
+          effect   = "NoSchedule"
+        }
+      ]
+    }
     node = {
       tolerateAllTaints = true
     },
@@ -248,9 +314,17 @@ resource "aws_eks_addon" "ebs_csi" {
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
 
+  timeouts {
+    create = "25m"
+    update = "25m"
+    delete = "10m"
+  }
+
   depends_on = [
     module.eks,
-    module.ebs_csi_driver_irsa
+    module.ebs_csi_driver_irsa,
+    helm_release.karpenter,
+    aws_eks_addon.coredns
   ]
 }
 
@@ -325,6 +399,18 @@ resource "helm_release" "argocd" {
         }
         service = {
           type = "ClusterIP"
+        }
+      }
+      controller = {
+        resources = {
+          requests = {
+            cpu    = "500m"
+            memory = "1536Mi"
+          }
+          limits = {
+            cpu    = "500m"
+            memory = "1536Mi"
+          }
         }
       }
       repoServer = {

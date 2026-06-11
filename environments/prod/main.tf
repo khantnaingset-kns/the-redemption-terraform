@@ -88,6 +88,7 @@ module "eks" {
   alb_controller_policy_arn          = module.iam.alb_controller_policy_arn
   karpenter_chart_version            = var.karpenter_chart_version
   argocd_chart_version               = var.argocd_chart_version
+  create_node_dependent_addons       = var.create_node_dependent_addons
 
   control_plane_scaling_config = {
     tier = var.control_plane_scaling_tier
@@ -127,7 +128,8 @@ module "database" {
 module "waf" {
   source = "../../modules/waf"
 
-  environment = var.environment
-  alb_arn     = module.alb.arn
-  trusted_ips = var.waf_trusted_ips
+  environment  = var.environment
+  project_name = var.cluster_name
+  alb_arn      = module.alb.arn
+  trusted_ips  = var.waf_trusted_ips
 }

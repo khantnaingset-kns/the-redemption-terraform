@@ -1,7 +1,7 @@
 resource "aws_security_group" "rds_sg" {
   vpc_id      = var.vpc_id
   name        = var.sg_name
-  description = "Security Group for RDS - The Redemption"
+  description = "Security Group for RDS - ${var.sg_name}"
 
   lifecycle {
     create_before_destroy = true
@@ -83,12 +83,11 @@ resource "aws_db_instance" "rds" {
 
   skip_final_snapshot       = false
   final_snapshot_identifier = "${var.db_instance_name}-final-snapshot"
-  deletion_protection       = true
+  deletion_protection       = false
   apply_immediately         = true
 
   lifecycle {
-    prevent_destroy = true
-    ignore_changes  = [tags]
+    ignore_changes = [tags]
   }
 
   depends_on = [
@@ -96,5 +95,4 @@ resource "aws_db_instance" "rds" {
     aws_db_subnet_group.db_subnet_group
   ]
 }
-
 

@@ -92,6 +92,7 @@ No requirements.
 
 | Name | Type |
 |------|------|
+| [aws_eks_addon.coredns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon) | resource |
 | [aws_eks_addon.ebs_csi](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eks_addon) | resource |
 | [helm_release.argocd](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.karpenter](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
@@ -109,6 +110,7 @@ No requirements.
 | <a name="input_argocd_chart_version"></a> [argocd\_chart\_version](#input\_argocd\_chart\_version) | The version of the ArgoCD Helm chart to deploy | `string` | n/a | yes |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | The name of the EKS cluster | `string` | n/a | yes |
 | <a name="input_control_plane_scaling_config"></a> [control\_plane\_scaling\_config](#input\_control\_plane\_scaling\_config) | Configuration for control plane scaling | <pre>object({<br/>    tier = string<br/>  })</pre> | n/a | yes |
+| <a name="input_create_node_dependent_addons"></a> [create\_node\_dependent\_addons](#input\_create\_node\_dependent\_addons) | Whether to create EKS add-ons that need schedulable EC2 nodes, such as EBS CSI. Keep false for the first bootstrap apply, then enable after Karpenter has EC2 capacity. | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment for which the resources are being provisioned (e.g., dev, staging, prod) | `string` | `"dev"` | no |
 | <a name="input_fargate_cloudwatch_logs_policy_arn"></a> [fargate\_cloudwatch\_logs\_policy\_arn](#input\_fargate\_cloudwatch\_logs\_policy\_arn) | The ARN of the IAM policy for Fargate CloudWatch Logs | `string` | n/a | yes |
 | <a name="input_intra_subnets"></a> [intra\_subnets](#input\_intra\_subnets) | List of private subnet IDs to be used for the EKS cluster | `list(string)` | n/a | yes |

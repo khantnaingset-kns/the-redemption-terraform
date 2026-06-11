@@ -92,6 +92,12 @@ variable "argocd_chart_version" {
   }
 }
 
+variable "create_node_dependent_addons" {
+  description = "Whether to create EKS add-ons that need schedulable EC2 nodes, such as EBS CSI. Keep false for the first bootstrap apply, then enable after Karpenter has EC2 capacity."
+  type        = bool
+  default     = false
+}
+
 variable "alb_sg_id" {
   description = "The ID of the security group to allow inbound access from ALB"
   type        = string

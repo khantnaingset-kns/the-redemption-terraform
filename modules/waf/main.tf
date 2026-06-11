@@ -1,7 +1,7 @@
 resource "aws_wafv2_ip_set" "trusted_ips" {
   count = var.environment == "prod" ? 1 : 0
 
-  name               = "trusted-ips-for-the-redemption-${var.environment}"
+  name               = "trusted-ips-for-${var.project_name}-${var.environment}"
   description        = "IPs to be allowed for ${var.environment}"
   scope              = "REGIONAL"
   ip_address_version = "IPV4"
@@ -9,8 +9,8 @@ resource "aws_wafv2_ip_set" "trusted_ips" {
 }
 
 resource "aws_wafv2_web_acl" "this" {
-  name        = "the-redemption-waf-${var.environment}"
-  description = "WAF for The Redemption ALB"
+  name        = "${var.project_name}-waf-${var.environment}"
+  description = "WAF for ${var.project_name} ALB"
   scope       = "REGIONAL"
 
   default_action {
@@ -202,7 +202,7 @@ resource "aws_wafv2_web_acl" "this" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "the-redemption-waf"
+    metric_name                = "${var.project_name}-waf"
     sampled_requests_enabled   = true
   }
 }

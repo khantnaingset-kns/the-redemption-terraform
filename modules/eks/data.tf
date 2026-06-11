@@ -8,7 +8,7 @@ data "aws_availability_zones" "available" {
 data "aws_region" "this" {}
 
 data "aws_ecrpublic_authorization_token" "token" {
-  region = data.aws_region.this.region
+  region = "us-east-1"
 }
 
 
@@ -38,4 +38,3 @@ data "aws_iam_policy_document" "karpenter_controller_assume_role_policy" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
   }
 }
-

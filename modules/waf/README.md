@@ -75,6 +75,7 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_alb_arn"></a> [alb\_arn](#input\_alb\_arn) | ARN of the ALB to associate the WAF Web ACL with | `string` | n/a | yes |
 | <a name="input_environment"></a> [environment](#input\_environment) | The environment in which the resources are deployed | `string` | n/a | yes |
+| <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Project name used to prefix WAF resources | `string` | n/a | yes |
 | <a name="input_trusted_ips"></a> [trusted\_ips](#input\_trusted\_ips) | A list of IP addresses to allow for a production environment | `list(string)` | `[]` | no |
 
 ## Outputs

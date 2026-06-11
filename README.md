@@ -202,15 +202,24 @@ cp environments/prod/terraform.tfvars.example environments/prod/terraform.tfvars
 
 ### 3. Apply
 
+> **Note:** Terraform must be applied **twice**. The first apply provisions the EKS cluster, Karpenter, and ArgoCD. Some EKS add-ons (e.g., EBS CSI driver) depend on Karpenter node pools that are provisioned by ArgoCD from the [`redemption-gitops`](https://github.com/your-org/redemption-gitops) repository. After the first apply, ArgoCD syncs the node pool manifests and deploys worker nodes. Run `terraform apply` a second time to create the node-dependent add-ons.
+
 ```bash
 cd environments/prod
 
 terraform init
+
+# First apply — cluster, Karpenter, ArgoCD, Fargate profiles
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Wait for ArgoCD to sync node pools from redemption-gitops and provision Karpenter nodes,
+# then run the second apply to create add-ons that require worker nodes (e.g., EBS CSI driver)
 terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-Modules are called in dependency order within `main.tf`. No manual sequencing required.
+Modules are called in dependency order within `main.tf`. The `create_node_dependent_addons` variable controls whether node-dependent add-ons are created; set it to `true` on the second apply.
 
 ### 4. Retrieve outputs
 
